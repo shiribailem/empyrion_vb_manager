@@ -8,7 +8,7 @@ def menu(message, raw_options, lower=True):
     # clean options for easier matching
     options = []
     for option in raw_options:
-        if option:
+        if option is not None:
             option = str(option)
             if lower:
                 option = option.lower()
@@ -138,7 +138,7 @@ while True:
             while option is not None:
                 backpack = backpacks[int(option)]
 
-                while option:
+                while option is not None:
                     count = 0
                     for item in backpack.slots:
                         if item:
