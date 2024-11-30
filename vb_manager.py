@@ -210,5 +210,4 @@ while True:
             if option == 6:
                 print(item)
             elif option == 7:
-                if item.faction:
-                    print(item.faction)
+                print(item)
