@@ -152,13 +152,33 @@ while True:
                                   "\t2: Remove Item\n"
                                   "\t3: Change Quantity\n"
                                   "\t4: Reset Decay\n"
-                                  "\tr: Refresh Backpack\n"
+                                  "\tr: Refresh Backpack (Erases Changes)\n"
+                                  "\tl: Lock VB (prevent players from opening)\n"
+                                  "\tu: Unlock VB (clear locked status)\n"
+                                  "\tw: Write Changes\n"
                                   "\tq: Go back to previous menu\n\n"
-                                  "> ", [1, 2, 3, 4, 'r'])
+                                  "> ", [1, 2, 3, 4, 'r', 'w', 'l', 'u'])
 
                     if option == 'r':
                         handle.refresh()
                         print(f"Refreshed Backpack. Backpack is Locked:{handle.locked}.")
+                    elif option == 'w':
+                        print("Attempting to get lock on VB.")
+                        if handle.safe_write():
+                            print(f"Changes to virtual backpack saved.")
+                        else:
+                            print(f"Was not able to get a lock. VB NOT SAVED.")
+                    elif option == 'l':
+                        if handle.acquire_lock(blocking=True, timeout=10):
+                            print("File locked.")
+                        else:
+                            print("COULD NOT OBTAIN LOCK.")
+                    elif option == 'u':
+                        if not handle.unlock(release_only=False):
+                            handle.unlock()
+                            print("Forced release of lock by player.")
+                        else:
+                            print("Released lock.")
                     elif option:
                         slot = menu("Enter the slot number to update: ", list(range(0, 49)))
 
