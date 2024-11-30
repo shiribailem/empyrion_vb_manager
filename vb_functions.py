@@ -174,7 +174,7 @@ class Master_Backpack:
     def acquire_lock(self, blocking=False, timeout=10):
         self.refresh(locks_only=True)
 
-        while blocking and timeout != 0 and self.locked:
+        while blocking and timeout != 0 and (self.locked and not self.data["OpendByName"] == "ADMIN"):
             self.refresh(locks_only=True)
             timeout -= 1
             if self.locked:
@@ -191,11 +191,12 @@ class Master_Backpack:
         self.locked = True
         self.write()
 
-    def unlock(self):
-        self.data["OpendByName"] = None
-        self.data["OpendBySteamId"] = None
-        self.locked = False
-        self.write()
+    def unlock(self, release_only=True):
+        if self.data["OpendByName"] == "ADMIN" or release_only:
+            self.data["OpendByName"] = None
+            self.data["OpendBySteamId"] = None
+            self.locked = False
+            self.write()
 
 
 def find_json_files(directory, index, max_vbs):
