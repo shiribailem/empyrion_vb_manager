@@ -3,6 +3,8 @@ from json.decoder import JSONDecodeError
 import os
 import fnmatch
 import traceback
+from time import sleep
+
 
 class Index_Handler:
     def __init__(self, filename):
@@ -124,7 +126,7 @@ class Master_Backpack:
         self.max_vbs = max_vbs
         self.refresh()
 
-    def refresh(self):
+    def refresh(self, locks_only=False):
         with open(self.filename, 'r') as file:
             self.data = json.loads(file.read())
 
@@ -140,11 +142,12 @@ class Master_Backpack:
         else:
             self.locked = False
 
-        for backpack in self.data['Backpacks']:
-            self.backpacks.append(Backpack(backpack, self.index))
+        if not locks_only:
+            for backpack in self.data['Backpacks']:
+                self.backpacks.append(Backpack(backpack, self.index))
 
-        while len(self.backpacks) < self.max_vbs:
-            self.backpacks.append(Backpack({}, self.index))
+            while len(self.backpacks) < self.max_vbs:
+                self.backpacks.append(Backpack({}, self.index))
 
     def get_raw(self):
         self.data['Backpacks'] = []
@@ -155,12 +158,32 @@ class Master_Backpack:
         with open(self.filename, 'w') as file:
             file.write(json.dumps(self.get_raw()))
 
-    def acquire_lock(self):
+    def safe_write(self, timeout=10):
+        self.refresh(locks_only=True)
+        while self.locked and timeout != 0:
+            timeout -= 1
+            sleep(1)
+            self.refresh(locks_only=True)
+
+        if self.locked:
+            return False
+
+        self.write()
+        return True
+
+    def acquire_lock(self, blocking=False, timeout=10):
+        self.refresh(locks_only=True)
+
+        while blocking and timeout != 0 and self.locked:
+            self.refresh(locks_only=True)
+            timeout -= 1
+            if self.locked:
+                sleep(1)
+
         if not self.locked or self.data["OpendByName"] == "ADMIN":
             self.lock()
             return True
-        else:
-            return False
+        return False
 
     def lock(self):
         self.data["OpendByName"] = "ADMIN"
