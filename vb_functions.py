@@ -130,7 +130,7 @@ class Master_Backpack:
         with open(self.filename, 'r') as file:
             self.data = json.loads(file.read())
 
-        if "Backpacks" not in self.data:
+        if not self.data or "Backpacks" not in self.data:
             print(f"Error loading: {self.filename}")
             raise
 
@@ -154,22 +154,19 @@ class Master_Backpack:
         for backpack in self.backpacks:
             self.data['Backpacks'].append(backpack.get_raw())
 
+        return self.data
+
     def write(self):
         with open(self.filename, 'w') as file:
             file.write(json.dumps(self.get_raw()))
 
     def safe_write(self, timeout=10):
-        self.refresh(locks_only=True)
-        while self.locked and timeout != 0:
-            timeout -= 1
-            sleep(1)
-            self.refresh(locks_only=True)
+        if self.acquire_lock(blocking=True, timeout=timeout):
+            self.write()
+            self.unlock()
+            return True
 
-        if self.locked:
-            return False
-
-        self.write()
-        return True
+        return False
 
     def acquire_lock(self, blocking=False, timeout=10):
         self.refresh(locks_only=True)
@@ -197,6 +194,8 @@ class Master_Backpack:
             self.data["OpendBySteamId"] = None
             self.locked = False
             self.write()
+            return True
+        return False
 
 
 def find_json_files(directory, index, max_vbs):
